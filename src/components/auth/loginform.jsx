@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { userLogin } from '../../features/auth/authActions';
 import { message } from 'antd';
 
@@ -30,7 +30,7 @@ function LoginForm() {
   const [messageContent, setMessageContent] = useState({ text: '', type: '' });
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
+  const [loading, setLoading] = useState(false);
 
 
   // Handle form submission
@@ -45,7 +45,7 @@ function LoginForm() {
       });
       return;
     }
-
+    setLoading(true);
     try {
       const result = await dispatch(userLogin(formData));
 
@@ -77,24 +77,6 @@ function LoginForm() {
       });
     }
   };
-
-
-  // Check if user is already logged in on component mount
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const message = searchParams.get('message');
-    const type = searchParams.get('type') || 'info';
-
-    if (message) {
-      setMessageContent({
-        text: message,
-        type: type
-      });
-      // Clear the URL parameters
-      navigate(location.pathname, { replace: true });
-    }
-  }, [location, navigate]);
-
   return (
     <div className="max-w-md mx-auto">
       <form onSubmit={handleSubmit} className="mb-4">
@@ -146,10 +128,10 @@ function LoginForm() {
         {/* Submit button */}
         <button
           type="submit"
-          disabled={false}  // Add loading state if needed
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md"
+          disabled={loading}
+          className={`w-full bg-blue-500 cursor-pointer hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          Sign in
+          {loading ? 'Signing in...' : 'Sign in'}
         </button>
       </form>
 
