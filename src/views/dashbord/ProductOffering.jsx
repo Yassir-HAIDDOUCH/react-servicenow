@@ -23,7 +23,7 @@ function ProductOffering() {
   useEffect(() => {
       if (localStorage.getItem('access_token')) {
         dispatch(getSpecs());
-        dispatch(getCats({ page: 1, limit: 99 }));
+        dispatch(getCats({ page: 1, limit: 6 }));
         dispatch(getChannels());
       } else {
         console.error('Auth token not found. Please login.');
