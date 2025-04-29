@@ -74,9 +74,14 @@ export const updateCategory = createAsyncThunk(
   async ({ id, ...productData }, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
+
+      console.log(productData);
+      
       const response = await axios.patch(`/api/product-offering-category/${id}`, productData, {
-        headers: { authorization: access_token },
+         headers: { authorization: access_token, 'Content-Type': 'multipart/form-data'  } 
       });
+      console.log(response);
+      
       return response.data.result;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);

@@ -3,6 +3,8 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { Modal } from 'antd';
 import { useDispatch } from 'react-redux';
+import {formatDateForInput} from '@/utils/formatDateForInput.js'
+import {handleFileChange} from '@/utils/validationfileUploader.js'
 import { updateCategory, createCategory } from '../../../features/servicenow/product-offering/productOfferingCategorySlice';
 
 const generateCodeFromName = (name) => {
@@ -15,7 +17,8 @@ const generateCodeFromName = (name) => {
     }
     if (codePrefix.length >= 8) break;
   }
-  return `${codePrefix}101`;
+  const randomNumber = Math.floor(Math.random() * 900) + 100;
+  return `${codePrefix}${randomNumber}`;
 };
 
 const validationSchema = Yup.object().shape({
@@ -28,19 +31,26 @@ const validationSchema = Yup.object().shape({
 function ProductOfferingCategoryForm({ open, setOpen, initialData = null }) {
   const dispatch = useDispatch();
   const isEditMode = Boolean(initialData);
+
+  
+
   const formik = useFormik({
     initialValues: {
       name: initialData?.name || '',
-      start_date: initialData?.start_date?.split(' ')[0] || '',
-      end_date: initialData?.end_date?.split(' ')[0] || '',
+      start_date: formatDateForInput(initialData?.start_date)  || '',
+      end_date: initialData?.end_date ? formatDateForInput(initialData?.end_date):'',
       status: initialData?.status || 'draft',
       description: initialData?.description || '',
       code: initialData?.code || '',
       is_leaf: true,
+      image: initialData?.image || '',
+      thumbnail: initialData?.thumbnail || '',
     },
     validationSchema,
-    onSubmit: async (values, {resetForm}) => {
+    onSubmit: async (values, { resetForm }) => {
       try {
+        console.log(values);
+        
         const action = isEditMode
           ? updateCategory({ id: initialData.sys_id, ...values })
           : createCategory(values);
@@ -53,6 +63,8 @@ function ProductOfferingCategoryForm({ open, setOpen, initialData = null }) {
     },
     enableReinitialize: true,
   });
+
+
 
   useEffect(() => {
     if (!isEditMode) {
@@ -70,8 +82,9 @@ function ProductOfferingCategoryForm({ open, setOpen, initialData = null }) {
       onCancel={handleCancel}
       footer={null}
       destroyOnClose
+      width={isEditMode ? 900 : 500} 
     >
-      <form onSubmit={formik.handleSubmit} className="space-y-4">
+      <form onSubmit={formik.handleSubmit} className={`space-y-4 ${isEditMode ? 'grid grid-cols-2 gap-6 ' : ''}`}>
         {/* Name */}
         <div>
           <label className="block font-medium mb-1">Name</label>
@@ -153,8 +166,51 @@ function ProductOfferingCategoryForm({ open, setOpen, initialData = null }) {
           )}
         </div> */}
 
+        {/* Image Upload (Edit mode only) */}
+        {isEditMode && (
+          <>
+            <div>
+              <label className="block font-medium mb-1">Category Image</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange('image', formik.setFieldValue, formik.setFieldError)}
+                className="w-full border rounded px-3 py-2"
+              />
+              {formik.values.image && (
+                <div className="mt-2">
+                  <img 
+                    src={formik.values.image} 
+                    alt="Category preview" 
+                    className="h-20 w-20 object-cover rounded"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block font-medium mb-1">Thumbnail Image</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange('thumbnail', formik.setFieldValue, formik.setFieldError)}
+                className="w-full border rounded px-3 py-2"
+              />
+              {formik.values.thumbnail && (
+                <div className="mt-2">
+                  <img 
+                    src={formik.values.thumbnail} 
+                    alt="Thumbnail preview" 
+                    className="h-20 w-20 object-cover rounded"
+                  />
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
         {/* Description */}
-        <div>
+        <div className='col-span-2'>
           <label className="block font-medium mb-1">Description</label>
           <textarea
             name="description"
@@ -167,8 +223,8 @@ function ProductOfferingCategoryForm({ open, setOpen, initialData = null }) {
           />
         </div>
 
-        {/* Actions */}
-        <div className="flex justify-end space-x-2 pt-2">
+        {/* Form Actions */}
+        <div className="col-span-2 flex justify-end space-x-2 pt-2">
           <button
             type="button"
             onClick={handleCancel}
