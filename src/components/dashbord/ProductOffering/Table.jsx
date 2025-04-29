@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Popconfirm, Pagination, Spin, Empty } from 'antd';
-import { getall, deleteProductOffering } from '../../../features/servicenow/product-offering/productOfferingSlice';
+import { getall, deleteProductOffering, updateProductOfferingStatus } from '../../../features/servicenow/product-offering/productOfferingSlice';
 
 function Table({setData , setOpen}) {
     const dispatch = useDispatch();
@@ -33,7 +33,22 @@ function Table({setData , setOpen}) {
     const handlePageChange = (page) => {
             dispatch(getall({ page, limit }));
         };
-
+    
+    const handleUpdateStatus = (id, currentStatus) => {
+        console.log(currentStatus);
+        const newStatus = currentStatus === 'draft' ? 'published' : (currentStatus === 'published' ? 'retired': 'archived');
+        const databody = {"sys_id": id, "status": newStatus}
+        console.log(databody)
+        dispatch(updateProductOfferingStatus(databody))  // Fixed action name
+        .unwrap()
+        .then(() => {
+            dispatch(getall({page: currentPage, limit}));
+        })
+        .catch((err) => {
+            console.error('Status update failed:', err);
+            alert(`Error: ${err?.message || 'Update failed'}`);
+        });
+      };
     
 
     if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
@@ -62,8 +77,23 @@ function Table({setData , setOpen}) {
                             <td className="px-3 py-3 whitespace-nowrap">{product.productSpecification?.name}</td>
                             <td className="px-3 py-3 whitespace-nowrap">
                                 <span className={`px-2 py-1 text-xs capitalize rounded ${product.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                    {product.status}
+                                {product.status}
                                 </span>
+                                <Popconfirm
+                                    title="Change PO status"
+                                    description="you're about to update the status of the product offering, You sure?"
+                                    icon={<i className="ri-error-warning-line text-red-600 mr-2"></i>}
+                                    onConfirm={() => handleUpdateStatus(product.id, product.status)}
+                                >
+                                    <button
+                                        className="text-gray-500 hover:text-red-600 "
+                                    >
+                                        <span onClick={()=>{console.log("clicked!")}} className={`px-2 py-1 text-xs capitalize rounded cursor-pointer hover:bg-cyan-600 hover:text-white  ${product.status === 'draft' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                {product.status === 'draft'? 'publish':(product.status ==='published'? 'retire':'archive')}
+                                </span>
+                                    </button>
+                                </Popconfirm>
+                                
                             </td>
                             <td className="px-3 py-3 whitespace-nowrap">{product.validFor?.startDateTime || 'N/A'}</td>
                             <td className="px-3 py-3 whitespace-nowrap">{product.validFor?.endDateTime || 'N/A'}</td>
