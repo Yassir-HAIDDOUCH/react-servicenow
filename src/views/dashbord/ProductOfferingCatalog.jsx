@@ -11,7 +11,7 @@ function ProductOfferingCatalog() {
 
   return (
     <>
-      <div className=''>
+      <div className='h-svh'>
         <div className='h-36 bg-cyan-700/40 flex items-end py-3 px-20'>
           <div className='flex w-full justify-between'>
 
@@ -46,7 +46,7 @@ function ProductOfferingCatalog() {
           </div>
         </div>
 
-        <div className='flex justify-center items-center py-5 mt-5'>
+        <div className='flex justify-center items-center py-5'>
           <Table setData={setData} setOpen={setOpen} dispatch={dispatch} ></Table>
         </div>
          

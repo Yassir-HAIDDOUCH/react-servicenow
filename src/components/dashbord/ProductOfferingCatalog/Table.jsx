@@ -27,13 +27,7 @@ function Table({ setData, setOpen }) {
         // Refresh current page after deletion
         dispatch(getall({ page: currentPage, limit }));
     };
-    console.log({
-        loading,
-        error,
-        currentPage,
-        totalItems,
-        limit
-    });
+    
 
     const handlePageChange = (page) => {
         dispatch(getall({ page, limit }));
@@ -64,8 +58,11 @@ function Table({ setData, setOpen }) {
                     <tbody className="divide-y divide-gray-200">
                         {!products || products.length === 0 ? (
                             <tr>
-                                <td colSpan="6" className="py-4 text-center">
-                                    <Empty description="No catalogs found" />
+                                <td colSpan="6" className="py-8 text-center">
+                                    <Empty
+                                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                        description="No catalogs found"
+                                    />
                                 </td>
                             </tr>
                         ) : (
@@ -107,7 +104,7 @@ function Table({ setData, setOpen }) {
                         )}
                     </tbody>
                 </table>
-                <div className=" mt-5 flex justify-end ">
+                <div className="mt-5 flex justify-end ">
                     <Pagination
                         current={currentPage}
                         total={totalItems}
