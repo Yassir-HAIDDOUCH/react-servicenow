@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { userLogin } from '../../features/auth/authActions';
@@ -6,20 +6,17 @@ import { message } from 'antd';
 
 const MESSAGE_MAPPINGS = {
   // Error messages
-  invalid_token: 'Invalid confirmation link',
-  expired_token: 'Confirmation link has expired',
+  missing_token: 'Invalid confirmation link',
+  invalid_or_expired_token: 'Invalid or expired confirmation link',
+  token_expired: 'Confirmation link has expired',
   user_exists: 'User already exists',
-  creation_failed: 'Account creation failed',
   timeout: 'Request timeout',
-  service_now_auth_failed: 'Service configuration error',
-  validation_error: 'Please fill in all fields',
-  invalid_credentials: 'Invalid username or password',
-  network_error: 'Network error. Please check your connection.',
-  authentication_failed: 'Authentication failed',
-  default_error: 'An unexpected error occurred',
+  auth_failed: 'Authentication failed',
+  invalid_data: 'Invalid registration data',
+  unknown_error: 'An unexpected error occurred',
   
   // Success messages
-  registration_confirmed: 'Registration confirmed! You can now log in.',
+  registration_confirmed: 'Registration confirmed successfully! You can now log in.',
   default_success: 'Action completed successfully'
 };
 
@@ -33,13 +30,14 @@ function LoginForm() {
   const [messageContent, setMessageContent] = useState({ text: '', type: '' });
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessageContent({ text: '', type: '' });
 
-    // Validate form data
     if (!formData.username.trim() || !formData.password.trim()) {
       setMessageContent({
         text: MESSAGE_MAPPINGS.validation_error,
@@ -47,43 +45,52 @@ function LoginForm() {
       });
       return;
     }
+    setLoading(true);
+    try {
+      const result = await dispatch(userLogin(formData));
 
-    // Dispatch the login action
-    const result = await dispatch(userLogin(formData));
-
-    if (userLogin.fulfilled.match(result)) {
-      const token = result.payload?.id_token;
-      if (token) {
-        localStorage.setItem('access_token', `Bearer ${token}`);
-        message.success('Login successful');
-        navigate('/dashboard');
-      } else {
-        message.error('Login successful but no token received');
+      if (userLogin.fulfilled.match(result)) {
+        const token = result.payload?.id_token;
+        if (token) {
+          localStorage.setItem('access_token', `Bearer ${token}`);
+          message.success('Login successful');
+          navigate('/dashboard');
+        } else {
+          message.error('Login successful but no token received');
+        }
+      } else if (userLogin.rejected.match(result)) {
+        const errorPayload = result.payload;
+        const errorMessage = typeof errorPayload === 'object' 
+          ? errorPayload.message || MESSAGE_MAPPINGS[errorPayload.type] || MESSAGE_MAPPINGS.default_error
+          : errorPayload || MESSAGE_MAPPINGS.default_error;
+        
+        setMessageContent({
+          text: errorMessage,
+          type: 'error'
+        });
       }
-    } else if (userLogin.rejected.match(result)) {
-      const { message: errorMsg, type } = result.payload || {};
-      message.error(MESSAGE_MAPPINGS[type] || errorMsg || MESSAGE_MAPPINGS.default_error);
+    } catch (err) {
+      console.error('Login error:', err); // Now we're using the err variable
+      setMessageContent({
+        text: MESSAGE_MAPPINGS.default_error,
+        type: 'error'
+      });
     }
   };
-
-  // Check if user is already logged in on component mount
-  useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) navigate('/dashboard');
-  }, [navigate]);
-
   return (
     <div className="max-w-md mx-auto">
       <form onSubmit={handleSubmit} className="mb-4">
         {/* Message display */}
         {messageContent.text && (
-          <div className={`mb-4 p-3 rounded-md ${
-            messageContent.type === 'error' 
-              ? 'bg-red-50 text-red-600 border border-red-200'
-              : 'bg-green-50 text-green-600 border border-green-200'
-          }`}>
-            {messageContent.text}
-          </div>
+        <div className={`mb-4 p-3 rounded-md ${
+          messageContent.type === 'success' 
+            ? 'bg-green-100 text-green-800'
+            : messageContent.type === 'error'
+            ? 'bg-red-100 text-red-800'
+            : 'bg-blue-100 text-blue-800'
+        }`}>
+          {messageContent.text}
+        </div>
         )}
 
         {/* Username field */}
@@ -121,10 +128,10 @@ function LoginForm() {
         {/* Submit button */}
         <button
           type="submit"
-          disabled={false}  // Add loading state if needed
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md"
+          disabled={loading}
+          className={`w-full bg-blue-500 cursor-pointer hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          Sign in
+          {loading ? 'Signing in...' : 'Sign in'}
         </button>
       </form>
 

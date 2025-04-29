@@ -1,20 +1,28 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Popconfirm } from 'antd';
+import { Popconfirm, Pagination, Spin, Empty } from 'antd';
 import { getall, deleteProductOffering } from '../../../features/servicenow/product-offering/productOfferingSlice';
 
 function Table({setData , setOpen}) {
     const dispatch = useDispatch();
-    const { data: products, loading, error } = useSelector((state) => state.productOffering);
+            const {
+                data: products,
+                loading,
+                error,
+                currentPage,
+                totalItems,
+                limit
+            } = useSelector((state) => state.productOffering);
     
     useEffect(() => {
-        dispatch(getall());
+        dispatch(getall({ page: 1, limit: 6 }));
     }, [dispatch]);
+    
 
     const handleDelete = async (productId) => {
-        
         await dispatch(deleteProductOffering(productId));
-        await dispatch(getall());
+        // Refresh current page after deletion
+        dispatch(getall({ page: currentPage, limit }));
     };
 
     function changeData(newData) {
@@ -22,14 +30,21 @@ function Table({setData , setOpen}) {
         setOpen(true)
       }
 
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div>Error: {error}</div>;
+    const handlePageChange = (page) => {
+            dispatch(getall({ page, limit }));
+        };
+
+    
+
+    if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
+    if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
     
     return (
-        <div className="overflow-x-auto rounded border border-gray-300 w-9/12 shadow-2xl">
-            <table className="min-w-full divide-y-2 divide-gray-200">
-                <thead className="ltr:text-left rtl:text-right bg-cyan-700 text-white">
-                    <tr className="*:font-medium ">
+        <div className='w-full justify-center flex'>
+            <div className="w-9/12">
+                <table className=" divide-y-2 min-w-full divide-gray-200 overflow-x-auto border border-gray-300  shadow-2xl">
+                    <thead className="ltr:text-left rtl:text-right bg-cyan-700 text-white">
+                        <tr className="*:font-medium ">
                         <th className="px-3 py-3 whitespace-nowrap">Name</th>
                         <th className="px-3 py-3 whitespace-nowrap">Product Specification</th>
                         <th className="px-3 py-3 whitespace-nowrap">Status</th>
@@ -40,7 +55,7 @@ function Table({setData , setOpen}) {
                 </thead>
 
                 <tbody className="divide-y divide-gray-200">
-                    {products?.map((product) => (
+                    {products.length > 0 ? products?.map((product) => ( product !== undefined ?
                         <tr key={product.id} className="*:text-gray-900 *:first:font-medium">
                             
                             <td className="px-3 py-3 whitespace-nowrap">{product.name}</td>
@@ -75,10 +90,29 @@ function Table({setData , setOpen}) {
                                 </Popconfirm>
 
                             </td>
-                        </tr>
-                    ))}
+                        </tr> : ""
+                    )) : <tr>
+                    <td colSpan="6" className="py-8 text-center">
+                        <Empty
+                            image={Empty.PRESENTED_IMAGE_SIMPLE}
+                            description="No catalogs found"
+                        />
+                    </td>
+                </tr>}
                 </tbody>
             </table>
+            <div className=" mt-5 flex justify-end ">
+                <Pagination
+                    current={currentPage}
+                    total={totalItems}
+                    pageSize={limit}
+                    onChange={handlePageChange}
+                    showSizeChanger={false}
+                    disabled={loading}
+                    className="ant-pagination-custom"
+                />
+            </div>
+        </div>
         </div>
     );
 }

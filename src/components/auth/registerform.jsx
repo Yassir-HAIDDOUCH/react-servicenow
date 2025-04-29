@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 const RegisterForm = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading, error } = useSelector((state) => state.auth);
+  const { loading } = useSelector((state) => state.auth);
   
   const [formData, setFormData] = useState({
     user_name: '',
@@ -19,7 +19,7 @@ const RegisterForm = () => {
   });
   
   const [validationErrors, setValidationErrors] = useState({});
-  const [successMessage, setSuccessMessage] = useState('');
+  const [messageContent, setMessageContent] = useState({ text: '', type: '' });
 
   const validateForm = () => {
     const errors = {};
@@ -40,7 +40,6 @@ const RegisterForm = () => {
       [name]: value
     }));
     
-    // Clear validation error when user types
     if (validationErrors[name]) {
       setValidationErrors(prev => {
         const newErrors = { ...prev };
@@ -52,7 +51,7 @@ const RegisterForm = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setSuccessMessage('');
+    setMessageContent({ text: '', type: '' });
     
     if (!validateForm()) return;
 
@@ -60,9 +59,11 @@ const RegisterForm = () => {
       const result = await dispatch(registerUser(formData));
       
       if (registerUser.fulfilled.match(result)) {
-        setSuccessMessage('A confirmation email has been sent. Please check your inbox to complete registration.');
+        setMessageContent({
+          text: 'A confirmation email has been sent. Please check your inbox to complete registration.',
+          type: 'success'
+        });
         
-        // Reset form after successful registration
         setFormData({
           user_name: '',
           user_password: '',
@@ -72,30 +73,37 @@ const RegisterForm = () => {
           mobile_phone: ''
         });
         
-        // Navigate to login page after delay
         setTimeout(() => {
-          navigate('/login', { state: { successMessage: 'Registration successful! Please confirm your email.' } });
-        }, 2000);
+          navigate('/', { state: { successMessage: 'A confirmation email has been sent to your address. Please check your inbox to complete your registration.' } });
+        }, 5000);
+      } else if (registerUser.rejected.match(result)) {
+        setMessageContent({
+          text: result.payload || 'Registration failed',
+          type: 'error'
+        });
       }
     } catch (err) {
+      setMessageContent({
+        text: 'An unexpected error occurred during registration',
+        type: 'error'
+      });
       console.error('Registration error:', err);
     }
   };
 
   return (
     <form onSubmit={handleRegister} className="mt-8 space-y-6 bg-white p-8 rounded-lg shadow-md">
-      {successMessage && (
-        <div className="p-3 bg-green-100 text-green-700 rounded-md text-sm">
-          {successMessage}
+      {messageContent.text && (
+        <div className={`p-3 rounded-md text-sm ${
+          messageContent.type === 'error' 
+            ? 'bg-red-100 text-red-700'
+            : 'bg-green-100 text-green-700'
+        }`}>
+          {messageContent.text}
         </div>
       )}
 
-      {error && (
-        <div className="p-3 bg-red-100 text-red-700 rounded-md text-sm">
-          {error}
-        </div>
-      )}
-
+      {/* Rest of your form fields */}
       <div className="grid grid-cols-1 gap-4">
         <div>
           <label htmlFor="user_name" className="block text-sm font-medium text-gray-700">
@@ -209,7 +217,7 @@ const RegisterForm = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full cursor-pointer flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? (
             <>

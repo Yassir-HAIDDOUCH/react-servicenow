@@ -41,10 +41,13 @@ export const registerUser = createAsyncThunk(
       return response.data;
     } catch (err) {
       if (err.response) {
-        // Server returned an error
-        return rejectWithValue(err.response.data.message || 'Registration failed');
+        // Ensure we return a string message, not an object
+        return rejectWithValue(
+          err.response.data?.message || 
+          err.response.data?.error_description || 
+          'Registration failed'
+        );
       } else {
-        // Network or other errors
         return rejectWithValue('An error occurred while registering. Please try again.');
       }
     }
@@ -69,20 +72,22 @@ export const userLogout = createAsyncThunk(
           {},
           {
             headers: {
-              'Authorization': token,
+              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             },
-            // Important for cookies to be included
             withCredentials: true
           }
         );
       }
       
+      // Optionally handle session/cookie removal here as well
+      document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT'; 
+
       return true;
     } catch (error) {
       console.error('Logout API error:', error);
-      // Even if API fails, we consider logout successful on client side
-      return true;
+      // Notify user of logout failure if needed
+      return false;
     }
   }
 );

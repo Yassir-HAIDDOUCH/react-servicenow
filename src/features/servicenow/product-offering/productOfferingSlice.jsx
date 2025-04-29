@@ -4,12 +4,14 @@ import axios from 'axios';
 // Async Thunks
 export const getall = createAsyncThunk(
   'ProductOffering/getall',
-  async (_, { rejectWithValue }) => {
+  async ({ page = 1, limit = 6 }, { rejectWithValue }) => {
     try {      
       const access_token = localStorage.getItem('access_token');
       const response = await axios.get("/api/product-offering", {
         headers: { authorization: access_token },
+        params: { page, limit }
       }); 
+      
       return response.data || [];
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -100,6 +102,10 @@ const ProductOfferingSlice = createSlice({
   initialState: { 
     data: [],
     selectedProduct: null,
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    limit: 6,
     loading: true,
     error: null
   },
@@ -111,7 +117,11 @@ const ProductOfferingSlice = createSlice({
         state.error = null;
       })
       .addCase(getall.fulfilled, (state, action) => {
-        state.data = action.payload;
+        state.data = action.payload.data;
+        state.currentPage = action.payload.page;
+        state.totalPages = action.payload.totalPages;
+        state.totalItems = action.payload.total;
+        state.limit = action.meta.arg?.limit || 6;
         state.loading = false;
       })
       .addCase(getall.rejected, (state, action) => {
@@ -139,7 +149,8 @@ const ProductOfferingSlice = createSlice({
         state.error = null;
       })
       .addCase(createProductOffering.fulfilled, (state, action) => {
-        state.data.push(action.payload);
+        state.data.unshift(action.payload);
+        state.totalItems += 1;
         state.loading = false;
       })
       .addCase(createProductOffering.rejected, (state, action) => {

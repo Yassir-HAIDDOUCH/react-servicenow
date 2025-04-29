@@ -108,10 +108,10 @@ const Sidebar = () => {
         </nav>
 
         {/* Logout */}
-        <div className=" group absolute bottom-0 left-0 right-0 border-t-2 border-red-600 py-2 pl-2 bg-red-100 text-red-700 hover:bg-red-600 hover:text-white transition-all duration-150" >
+        <div className=" group absolute bottom-0 left-0 right-0 border-t-2 border-cyan-600 py-2 pl-2 bg-white text-cyan-700 hover:bg-cyan-700 hover:text-white transition-all duration-150" >
           <button
             onClick={handleLogout}
-            className="w-full flex items-center p-2 "
+            className="w-full flex items-center p-2 cursor-pointer"
           >
             <i className="ri-shut-down-line mr-3 text-lg shake" />
             <span className="font-medium">Logout</span>
